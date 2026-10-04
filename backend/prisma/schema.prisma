@@ -6,3 +6,89 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum ImportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum HealthRecordType {
+  STEP_COUNT
+  DISTANCE
+  ACTIVE_ENERGY
+  HEART_RATE
+  RESTING_HEART_RATE
+  HRV
+  SLEEP_ANALYSIS
+  VO2_MAX
+}
+
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  email         String         @unique @db.VarChar(254)
+  passwordHash  String         @db.VarChar(255)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @db.Timestamptz(3)
+  importJobs    ImportJob[]
+  healthRecords HealthRecord[]
+  workouts      Workout[]
+}
+
+model ImportJob {
+  id                String       @id @default(uuid()) @db.Uuid
+  userId            String       @db.Uuid
+  status            ImportStatus @default(QUEUED)
+  progress          Int          @default(0)
+  recordsProcessed  Int          @default(0)
+  recordsSkipped    Int          @default(0)
+  workoutsProcessed Int          @default(0)
+  recordsFailed     Int          @default(0)
+  errorMessage      String?      @db.Text
+  fileName          String       @db.VarChar(255)
+  fileHash          String       @db.Char(64)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fileHash])
+  @@index([userId, status, createdAt])
+}
+
+model HealthRecord {
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String           @db.Uuid
+  type       HealthRecordType
+  startDate  DateTime         @db.Timestamptz(3)
+  endDate    DateTime         @db.Timestamptz(3)
+  value      Float?
+  valueText  String?          @db.VarChar(100)
+  unit       String           @db.VarChar(50)
+  sourceName String           @db.VarChar(255)
+  dedupKey   String           @db.Char(64)
+  createdAt  DateTime         @default(now()) @db.Timestamptz(3)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupKey])
+  @@index([userId, type, startDate])
+}
+
+model Workout {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  activityType    String   @db.VarChar(100)
+  startDate       DateTime @db.Timestamptz(3)
+  endDate         DateTime @db.Timestamptz(3)
+  durationSeconds Float
+  distanceMeters  Float?
+  energyKcal      Float?
+  avgHeartRate    Float?
+  sourceName      String   @db.VarChar(255)
+  dedupKey        String   @db.Char(64)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupKey])
+  @@index([userId, startDate])
+  @@index([userId, activityType, startDate])
+}

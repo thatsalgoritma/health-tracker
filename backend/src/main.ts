@@ -12,6 +12,7 @@ async function bootstrap() {
     .setTitle('Personal Health Analytics API')
     .setDescription('API for your personal activity analytics')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   SwaggerModule.setup(
     'docs',

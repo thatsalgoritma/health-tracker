@@ -9,6 +9,8 @@
   "scripts": {
     "lint": "npm run lint:check --workspaces --if-present",
     "test": "npm run test --workspace backend",
+    "db:migrate": "npm run prisma:migrate --workspace backend",
+    "db:generate": "npm run prisma:generate --workspace backend",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,yml,yaml,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,yml,yaml,md}\""
   },
